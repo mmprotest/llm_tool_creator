@@ -7,7 +7,7 @@ from src.utils import generate_python_function, partition_by_tool, write_to_file
 
 
 # initialize llm
-llm = OpenAI(api_base="http://localhost:1234/v1", api_key="lm-studio", model="gpt-3.5-turbo-0613")
+llm = OpenAI(api_base="http://localhost:1234/v1", api_key="lm-studio", model="gpt-3.5-turbo-0613",timeout=500)
 
 tool_creator_sys_prompt = """
 You are a tool creator. You will be given a query by the user. Please list the tools required (custom python functions) in order to complete this query, and include a detailed description of each tool with inputs and returns compliant with PEP8 style guide. DO NOT USE ANY SPECIAL CHARACTERS LIKE **. DO NOT WRITE THE ACTUAL PYTHON CODE. Think it through step by step.
