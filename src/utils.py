@@ -60,6 +60,30 @@ def generate_python_function(request: str) -> str:
     except Exception as e:
         return f"An error occurred: {str(e)}"
     
+def refine_python_function(request: str) -> str:
+    """
+    Analyses a Python function definition and refines the script.
+
+    Parameters:
+    script (str): The request describing the desired function.
+
+    Returns:
+    str: The refined Python function as a string.
+    """
+    
+    try:
+        my_llm = OpenAI(api_base="http://localhost:1234/v1", api_key="lm-studio", model="gpt-3.5-turbo-0613")
+        messages = [
+            ChatMessage(
+            role="system", content="You are an expert Python software engineer. You write efficient python functions.\n\n\n## Output Format\n\nYou will be given a python script by the user. Your task is to analyse this script and respond with an improved script. This could be bug fixing or improvements to make the script better. Respond with only the python script. NEVER surround your response with markdown code markers. Make sure it complies with PEP8 style guide. Include a text description of what the function does, improvements, inputs and returns within the function."
+                        ),
+            ChatMessage(role="user", content=request),
+]
+        resp = my_llm.chat(messages)
+        return resp.message.content
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+    
 
 
 def partition_by_tool(string):

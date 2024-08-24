@@ -9,6 +9,8 @@ from src.utils import generate_python_function, partition_by_tool, write_to_file
 # initialize llm
 llm = OpenAI(api_base="http://localhost:1234/v1", api_key="lm-studio", model="gpt-3.5-turbo-0613",timeout=500)
 
+query = "I have a mortgage of $735,000 and I have 27 years left on my loan. My interest rate is 6.14% per year. My repayments are fortnightly. What is my minimum repayment?"
+
 tool_creator_sys_prompt = """
 You are a tool creator. You will be given a query by the user. Please list the tools required (custom python functions) in order to complete this query, and include a detailed description of each tool with inputs and returns compliant with PEP8 style guide. DO NOT USE ANY SPECIAL CHARACTERS LIKE **. DO NOT WRITE THE ACTUAL PYTHON CODE. Think it through step by step.
 
@@ -22,7 +24,7 @@ etc
 """
 messages = [
     ChatMessage(role="system", content = tool_creator_sys_prompt),
-    ChatMessage(role="user", content="I want to do full scenario planning for my mortgage, including plotting my interest over time, calculating savings, budgeting etc. EVERYTHING. Please think of other things I may want to calculate and include them in your scope. It needs to be a complete solution for all mortgage related enquiries.")
+    ChatMessage(role="user", content=query)
 ]
 resp = llm.chat(messages).message.content
 
@@ -32,3 +34,10 @@ for item in partition_by_tool(resp):
 
 my_tools = list_functions_in_file('src/tools.py')
 
+from src.tools import *
+
+agent = ReActAgent.from_tools([FunctionTool.from_defaults(fn=globals().get(tool)) for tool in my_tools], llm=llm, verbose=True,max_iterations = 50)
+
+agent.chat(query)
+
+calculate_minimum_repayment(735000, 27, 0.0614, 26)
