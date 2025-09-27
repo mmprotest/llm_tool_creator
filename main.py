@@ -1,43 +1,69 @@
-from llama_index.core.tools import FunctionTool
-from llama_index.llms.openai import OpenAI
-from llama_index.core.agent import ReActAgent
-from llama_index.core.llms import ChatMessage
-from src.utils import generate_python_function, partition_by_tool, write_to_file, list_functions_in_file
+"""Command line interface for running the adaptive agent."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+from src import AgentConfig, AgentOrchestrator
 
 
+def _load_context(context_file: str | None) -> str | None:
+    if not context_file:
+        return None
+    path = Path(context_file)
+    if not path.exists():
+        raise FileNotFoundError(f"Context file not found: {context_file}")
+    return path.read_text(encoding="utf-8")
 
-# initialize llm
-llm = OpenAI(api_base="http://localhost:1234/v1", api_key="lm-studio", model="gpt-3.5-turbo-0613",timeout=500)
 
-query = "I have a mortgage of $735,000 and I have 27 years left on my loan. My interest rate is 6.14% per year. My repayments are fortnightly. What is my minimum repayment?"
+def _print_result(result: Any) -> None:
+    if isinstance(result, (dict, list)):
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(result)
 
-tool_creator_sys_prompt = """
-You are a tool creator. You will be given a query by the user. Please list the tools required (custom python functions) in order to complete this query, and include a detailed description of each tool with inputs and returns compliant with PEP8 style guide. DO NOT USE ANY SPECIAL CHARACTERS LIKE **. DO NOT WRITE THE ACTUAL PYTHON CODE. Think it through step by step.
 
-## Output Format
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run the adaptive AI agent on a goal.")
+    parser.add_argument("goal", help="High level goal for the agent.")
+    parser.add_argument("--context", help="Optional path to a text file containing additional context.")
+    args = parser.parse_args()
 
-Tool 1: Description of tool
+    config = AgentConfig()
+    orchestrator = AgentOrchestrator(config)
+    context = _load_context(args.context)
+    result = orchestrator.run(args.goal, context=context)
 
-Tool 2: Description of tool
+    print("=== PLAN ===")
+    for idx, step in enumerate(result.plan.steps, start=1):
+        print(f"{idx}. {step}")
 
-etc
-"""
-messages = [
-    ChatMessage(role="system", content = tool_creator_sys_prompt),
-    ChatMessage(role="user", content=query)
-]
-resp = llm.chat(messages).message.content
+    print("\n=== EXECUTION LOG ===")
+    for idx, log in enumerate(result.steps, start=1):
+        print(f"Step {idx}: {log.step_description}")
+        print(f"  Thought: {log.decision.thought}")
+        print(f"  Action: {log.decision.action}")
+        if log.decision.tool_name:
+            print(f"  Tool: {log.decision.tool_name}")
+            if log.decision.arguments:
+                print(f"  Arguments: {json.dumps(log.decision.arguments, ensure_ascii=False)}")
+        if log.created_tool:
+            print(f"  Created tool: {log.created_tool.name} -> {log.created_tool.description}")
+        if log.output is not None:
+            print("  Output:")
+            _print_result(log.output)
+        if log.error:
+            print(f"  Error: {log.error}")
+        print()
 
-for item in partition_by_tool(resp):
-    write_to_file(generate_python_function(item),'src/tools.py')
-    
+    final_answer = result.last_output()
+    if final_answer:
+        print("=== FINAL ANSWER ===")
+        _print_result(final_answer)
 
-my_tools = list_functions_in_file('src/tools.py')
 
-from src.tools import *
-
-agent = ReActAgent.from_tools([FunctionTool.from_defaults(fn=globals().get(tool)) for tool in my_tools], llm=llm, verbose=True,max_iterations = 50)
-
-agent.chat(query)
-
-calculate_minimum_repayment(735000, 27, 0.0614, 26)
+if __name__ == "__main__":
+    main()
