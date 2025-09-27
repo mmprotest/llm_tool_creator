@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-
 import html
 import re
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
-=======
-from typing import List
-
 
 import requests
 
@@ -18,7 +14,6 @@ try:  # pragma: no cover - optional dependency
     from duckduckgo_search import DDGS  # type: ignore
 except Exception:  # pragma: no cover - fallback when package missing
     DDGS = None
-
 
 
 @dataclass
@@ -33,8 +28,6 @@ class SearchResult:
         return {"title": self.title, "href": self.href, "body": self.body}
 
 
-=======
-
 def web_search(query: str, max_results: int = 5) -> List[dict]:
     """Perform a DuckDuckGo search and return structured results."""
 
@@ -42,14 +35,11 @@ def web_search(query: str, max_results: int = 5) -> List[dict]:
         raise ValueError("Query must be provided.")
 
     results: List[SearchResult] = []
-=======
-    results: List[dict] = []
 
     if DDGS is not None:
         with DDGS() as search:
             for item in search.text(query, max_results=max_results):
                 results.append(
-
                     SearchResult(
                         title=(item.get("title") or "").strip(),
                         href=item.get("href"),
@@ -63,25 +53,6 @@ def web_search(query: str, max_results: int = 5) -> List[dict]:
     if not results:
         results.extend(_duckduckgo_instant_answer_fallback(query, max_results))
     return [result.as_dict() for result in results[:max_results]]
-=======
-                    {
-                        "title": item.get("title"),
-                        "href": item.get("href"),
-                        "body": item.get("body"),
-                    }
-                )
-        return results
-    # Simple HTML fallback
-    params = {"q": query, "kl": "us-en"}
-    response = requests.get("https://duckduckgo.com/html", params=params, timeout=15)
-    response.raise_for_status()
-    for line in response.text.splitlines():
-        if "result__title" in line:
-            results.append({"title": line.strip(), "href": None, "body": None})
-            if len(results) >= max_results:
-                break
-    return results
-
 
 
 def fetch_url(url: str, timeout: int = 15) -> str:
@@ -92,7 +63,6 @@ def fetch_url(url: str, timeout: int = 15) -> str:
     response = requests.get(url, timeout=timeout)
     response.raise_for_status()
     return response.text
-
 
 
 def _duckduckgo_html_fallback(query: str, max_results: int) -> Iterable[SearchResult]:
@@ -180,5 +150,3 @@ def _duckduckgo_instant_answer_fallback(query: str, max_results: int) -> Iterabl
 def _strip_html(raw_html: str) -> str:
     cleaned = re.sub(r"<[^>]+>", "", raw_html)
     return html.unescape(cleaned).strip()
-=======
-

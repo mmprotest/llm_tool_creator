@@ -1,60 +1,49 @@
-# Adaptive LLM Tool Creator
+# LLM Tool Creator
 
-
-This repository ships a production-ready framework for building autonomous, tool-augmented
-agents. The agent can decompose arbitrary goals into actionable plans, decide which tools to
-execute, generate new Python tools on demand, and browse the web to gather supporting
-information.
+Modular agent system that plans, decides, and dynamically generates Python helper tools to solve complex goals. The agent integrates planning, reasoning, and execution while offering both interactive and programmatic interfaces.
 
 ## Key capabilities
 
-- **OpenAI native** – Built on top of the official [`openai`](https://pypi.org/project/openai/) SDK
-  and compatible with any OpenAI-style endpoint (Azure OpenAI, local proxies, etc.).
-- **Reasoned planning** – A planner derives a concise sequence of steps before execution to keep
-  the agent focused and auditable.
-- **Action policy** – The decision module weighs existing tools against the need to think or create
-  a new tool, and is configured to always expose its reasoning.
-- **Dynamic tool creation** – Natural-language specifications are translated into executable Python
-  helpers which can be cached and re-used across runs.
-- **Web research tooling** – DuckDuckGo search and HTTP fetching provide light-weight browsing
-  primitives out of the box.
-- **Interactive & scripted workflows** – Use the Streamlit control panel for rapid experimentation
-  or the CLI/programmatic API for automation.
+- **OpenAI-native** – Uses the official [`openai`](https://pypi.org/project/openai/) SDK and works with any OpenAI-compatible endpoint (Azure OpenAI, local proxies, etc.).
+- **Reasoned planning** – Builds concise, auditable plans before acting so the agent stays on track.
+- **Transparent decisions** – The action policy chooses between thinking, using a tool, or creating a new one while exposing its internal reasoning.
+- **Dynamic tool creation** – Natural-language specifications are converted into Python helpers that can be persisted and reused across runs.
+- **Built-in web tooling** – DuckDuckGo search and HTTP fetching utilities support lightweight research.
+- **Flexible workflows** – Control the agent via the Streamlit dashboard, CLI, or direct Python API.
 
 ## Project structure
 
 ```
 src/
   agent_system/
-    config.py        # Dataclasses describing the agent configuration model.
-    llm.py           # Thin wrapper around the OpenAI Python client.
-    planner.py       # Converts goals into step-by-step plans.
-    decider.py       # Chooses whether to think, execute, or create tools with explicit reasoning.
-    tooling.py       # Registers built-in tools and manages dynamically generated ones.
-    tools/           # Default tools (web search, URL fetcher, Python executor).
-    orchestrator.py  # High-level loop coordinating the planner, decider, and tool manager.
+    config.py          # Dataclasses describing the agent configuration model.
+    llm.py             # Thin wrapper around the OpenAI Python client.
+    planner.py         # Converts goals into step-by-step plans.
+    decider.py         # Chooses whether to think, execute, or create tools with explicit reasoning.
+    tooling.py         # Registers built-in tools and manages dynamically generated ones.
+    tools/             # Default tools (web search, URL fetcher, Python executor).
+    orchestrator.py    # High-level loop coordinating the planner, decider, and tool manager.
     generated_tools.py # Auto-populated with LLM-generated helpers (loaded on start-up).
-main.py              # CLI entry point.
-streamlit_app.py     # Streamlit UI for interactive experimentation.
+main.py                # CLI entry point.
+streamlit_app.py       # Streamlit UI for interactive experimentation.
 ```
 
 ## Installation
 
-1. **Create a virtual environment** (optional but recommended).
+1. **Create a virtual environment** (recommended):
 
    ```bash
    python -m venv .venv
    source .venv/bin/activate
    ```
 
-2. **Install dependencies**.
+2. **Install dependencies**:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Provide LLM credentials**. The agent reads `OPENAI_API_KEY` and `OPENAI_API_BASE` (or the
-   `LLM_API_KEY` / `LLM_API_BASE` fallbacks). For example:
+3. **Configure LLM credentials** – set `OPENAI_API_KEY` and optionally `OPENAI_API_BASE` (or the fallback `LLM_API_KEY` / `LLM_API_BASE` variables):
 
    ```bash
    export OPENAI_API_KEY="your-key"
@@ -65,130 +54,63 @@ streamlit_app.py     # Streamlit UI for interactive experimentation.
 
 ### Streamlit control panel
 
-Launch the interactive UI to configure models, run goals, and inspect step-by-step execution.
+Launch the interactive UI to configure models, run goals, and inspect step-by-step execution:
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-The sidebar exposes model credentials, planning depth, persistence controls, and advanced OpenAI
-parameters. The main area visualises the generated plan, each reasoning step, any dynamically
-created tools (including their source code), and the final answer.
+The sidebar exposes credentials, planning depth, persistence controls, and advanced OpenAI parameters. The main pane visualises the generated plan, each reasoning step, any dynamically created tools (with source code), and the final answer.
 
 ### Command line interface
 
-Execute the agent from the terminal:
-=======
-This project contains a modular agent system capable of planning, creating Python tools,
-and executing them to solve complex problems. The agent combines a planner, decision
-policy, dynamic tool manager, and built-in web browsing utilities.
-
-## Features
-
-- **Planning** – Generates multi-step plans for arbitrary goals using an OpenAI-compatible LLM.
-- **Action selection** – Chooses between thinking, executing a tool, or creating a new tool.
-- **Dynamic tool creation** – Automatically generates Python helper functions based on natural
-  language specifications and loads them at runtime.
-- **Web interaction** – Ships with DuckDuckGo search and URL fetching utilities to enable
-  online research.
-- **Python execution** – Includes a sandboxed Python executor for quick calculations or data
-  wrangling.
-
-## Requirements
-
-- Python 3.10+
-- [`openai`](https://pypi.org/project/openai/) Python SDK configured with API access.
-
-export OPENAI_API_KEY="your-key"
-export OPENAI_API_BASE="https://api.openai.com/v1"
-```
-
-## Usage
-
-
-Run the CLI with a goal statement:
-
+Run the agent from the terminal with a goal statement:
 
 ```bash
 python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
 ```
 
-
-Optional additional context can be supplied via a text file:
+Optional context can be supplied via a text file:
 
 ```bash
 python main.py "Draft a marketing plan" --context notes/brand_constraints.txt
 ```
 
-The CLI prints the plan, execution log, tool creations, and any final output.
-
 ### Programmatic access
-=======
-
-
-## Programmatic Example
-
 
 ```python
 from src import AgentOrchestrator
 
+goal = "Summarise the latest research on quantum batteries"
 orchestrator = AgentOrchestrator()
-
-result = orchestrator.run("Summarise the latest research on quantum batteries")
+result = orchestrator.run(goal)
 print(result.last_output())
 ```
 
 ## Configuration reference
 
-All runtime settings are encapsulated by `AgentConfig` (`src/agent_system/config.py`). Override the
-defaults either programmatically or within the Streamlit sidebar:
+Runtime settings live in `AgentConfig` (`src/agent_system/config.py`). Override defaults programmatically or through the Streamlit sidebar:
 
-- **LLMConfig** – Model name, API key/base URL, timeout, and extra parameters forwarded to
-  `openai.ChatCompletion`. Use this to adjust temperature, response format, etc.
-- **PlanningConfig** – Maximum number of plan steps and whether the decider must always supply
-  reasoning (`require_reasoning=True` raises an error if the thought field is blank).
-- **ToolingConfig** – Path to the generated tools module and an `auto_persist` flag controlling
-  whether new tools are appended for later reuse.
+- **LLMConfig** – Model name, API key/base URL, timeout, and additional OpenAI parameters.
+- **PlanningConfig** – Maximum plan steps and whether the decider must always provide reasoning (`require_reasoning`).
+- **ToolingConfig** – Generated tools path and `auto_persist` flag controlling persistence.
 
 ## Tool persistence & custom tools
 
-- Built-in helpers (`web_search`, `fetch_url`, `run_python`) are registered at startup without being
-  written to disk.
-- Dynamically generated tools are appended to `src/agent_system/generated_tools.py` when persistence
-  is enabled. The file is parsed on initialisation so previously created helpers become immediately
-  available in subsequent runs.
-- You can register your own utilities by calling `orchestrator.tool_manager.register` with
-  `persist=True` if you want them stored alongside generated tools.
+- Built-in helpers (`web_search`, `fetch_url`, `run_python`) are registered at startup without being written to disk.
+- Dynamically generated tools are appended to `src/agent_system/generated_tools.py` when persistence is enabled and are reloaded automatically on start-up.
+- Register custom utilities by calling `orchestrator.tool_manager.register` and pass `persist=True` to store them alongside generated tools.
 
-## Testing & quality checks
+## Testing
 
-The project is validated using Python's bytecode compiler to ensure all modules import cleanly:
+Use Python's bytecode compiler to ensure modules import cleanly:
 
 ```bash
 python -m compileall src streamlit_app.py main.py example_mortgage_agent.py
 ```
 
-You can also run the agent in a dry run (with mock LLM responses) or add your own tests depending on
-your deployment requirements.
-
 ## Troubleshooting
 
-- **Empty or failing decisions** – Enable persistence and inspect the execution log to confirm the
-  LLM returned a valid JSON payload. The decider enforces non-empty reasoning when
-  `require_reasoning=True`.
-- **DuckDuckGo limits** – Install `duckduckgo-search` for API-based queries; otherwise the HTML and
-  instant-answer fallbacks will be used automatically.
-- **Network or SSL errors** – Verify proxy/firewall rules and confirm the `OPENAI_API_BASE`
-  endpoint is reachable from your environment.
-=======
-goal = "Summarise the latest research on quantum batteries"
-result = orchestrator.run(goal)
-print(result.last_output())
-```
-
-## Extending the Agent
-
-- Register custom Python functions via `orchestrator.tool_manager.register`.
-- Persist generated tools inside `src/agent_system/generated_tools.py` (auto-managed).
-- Modify prompts or behaviour by editing modules within `src/agent_system/`.
-
+- **Decision errors** – When `require_reasoning=True`, the decider raises an error if the model omits a `thought`. Inspect the execution log in Streamlit or the CLI output.
+- **DuckDuckGo limits** – Install `duckduckgo-search` for richer API-based results; otherwise HTML and instant-answer fallbacks are used.
+- **Network/SSL issues** – Verify proxy settings and confirm the configured `OPENAI_API_BASE` endpoint is reachable.
