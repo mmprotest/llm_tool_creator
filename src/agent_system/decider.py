@@ -101,7 +101,8 @@ The agent can only execute actions through registered tools.
             [
                 Message(role="system", content=self._SYSTEM_PROMPT),
                 Message(role="user", content=json.dumps(user_prompt, ensure_ascii=False)),
-            ]
+            ],
+            response_format={"type": "json_object"},
         )
         try:
             payload = json.loads(response)
