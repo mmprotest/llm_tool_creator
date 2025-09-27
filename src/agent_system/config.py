@@ -27,6 +27,7 @@ class PlanningConfig:
 
 @dataclass
 class ToolingConfig:
+
     """Configuration for dynamic tool management.
 
     Attributes
@@ -37,6 +38,9 @@ class ToolingConfig:
         When ``True`` newly created tools are appended to ``generated_module_path`` and reloaded on
         subsequent runs.
     """
+=======
+    """Configuration for dynamic tool management."""
+
 
     generated_module_path: str = "src/agent_system/generated_tools.py"
     auto_persist: bool = True

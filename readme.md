@@ -1,5 +1,6 @@
 # Adaptive LLM Tool Creator
 
+
 This repository ships a production-ready framework for building autonomous, tool-augmented
 agents. The agent can decompose arbitrary goals into actionable plans, decide which tools to
 execute, generate new Python tools on demand, and browse the web to gather supporting
@@ -77,10 +78,41 @@ created tools (including their source code), and the final answer.
 ### Command line interface
 
 Execute the agent from the terminal:
+=======
+This project contains a modular agent system capable of planning, creating Python tools,
+and executing them to solve complex problems. The agent combines a planner, decision
+policy, dynamic tool manager, and built-in web browsing utilities.
+
+## Features
+
+- **Planning** – Generates multi-step plans for arbitrary goals using an OpenAI-compatible LLM.
+- **Action selection** – Chooses between thinking, executing a tool, or creating a new tool.
+- **Dynamic tool creation** – Automatically generates Python helper functions based on natural
+  language specifications and loads them at runtime.
+- **Web interaction** – Ships with DuckDuckGo search and URL fetching utilities to enable
+  online research.
+- **Python execution** – Includes a sandboxed Python executor for quick calculations or data
+  wrangling.
+
+## Requirements
+
+- Python 3.10+
+- [`openai`](https://pypi.org/project/openai/) Python SDK configured with API access.
+
+export OPENAI_API_KEY="your-key"
+export OPENAI_API_BASE="https://api.openai.com/v1"
+```
+
+## Usage
+
+
+Run the CLI with a goal statement:
+
 
 ```bash
 python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
 ```
+
 
 Optional additional context can be supplied via a text file:
 
@@ -91,11 +123,17 @@ python main.py "Draft a marketing plan" --context notes/brand_constraints.txt
 The CLI prints the plan, execution log, tool creations, and any final output.
 
 ### Programmatic access
+=======
+
+
+## Programmatic Example
+
 
 ```python
 from src import AgentOrchestrator
 
 orchestrator = AgentOrchestrator()
+
 result = orchestrator.run("Summarise the latest research on quantum batteries")
 print(result.last_output())
 ```
@@ -142,3 +180,15 @@ your deployment requirements.
   instant-answer fallbacks will be used automatically.
 - **Network or SSL errors** – Verify proxy/firewall rules and confirm the `OPENAI_API_BASE`
   endpoint is reachable from your environment.
+=======
+goal = "Summarise the latest research on quantum batteries"
+result = orchestrator.run(goal)
+print(result.last_output())
+```
+
+## Extending the Agent
+
+- Register custom Python functions via `orchestrator.tool_manager.register`.
+- Persist generated tools inside `src/agent_system/generated_tools.py` (auto-managed).
+- Modify prompts or behaviour by editing modules within `src/agent_system/`.
+

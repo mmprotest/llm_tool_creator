@@ -49,9 +49,13 @@ class AgentOrchestrator:
         self._planner = TaskPlanner(self._llm, self._config.planning)
         self._tool_manager = ToolManager(self._config.tooling)
         register_default_tools(self._tool_manager)
+
         self._decider = ActionDecider(
             self._llm, require_reasoning=self._config.planning.require_reasoning
         )
+=======
+        self._decider = ActionDecider(self._llm)
+
 
     @property
     def tool_manager(self) -> ToolManager:

@@ -54,6 +54,7 @@ JSON schema:
 The agent can only execute actions through registered tools.
 """
 
+
     def __init__(self, llm: LLMClient, *, require_reasoning: bool = True) -> None:
         """Create a decider.
 
@@ -68,6 +69,10 @@ The agent can only execute actions through registered tools.
 
         self._llm = llm
         self._require_reasoning = require_reasoning
+=======
+    def __init__(self, llm: LLMClient) -> None:
+        self._llm = llm
+
 
     def decide(self, step: str, tools: List[ToolSpec], context: str | None = None) -> ActionDecision:
         """Return the best action for ``step`` based on available tools."""
@@ -89,10 +94,13 @@ The agent can only execute actions through registered tools.
                 "and provide reasoning in the thought field."
             ),
         }
+
         if self._require_reasoning:
             user_prompt["instructions"] += (
                 " Always explain why you selected the action in the 'thought' field before acting."
             )
+=======
+
         response = self._llm.chat(
             [
                 Message(role="system", content=self._SYSTEM_PROMPT),
@@ -129,8 +137,11 @@ The agent can only execute actions through registered tools.
             raise DecisionError("Tool action chosen without specifying tool name.")
         if action == "create_tool" and not new_tool:
             raise DecisionError("Tool creation requested without tool proposal.")
+
         if self._require_reasoning and not thought:
             raise DecisionError("Reasoning is required but the thought field was empty.")
+=======
+
         return ActionDecision(
             thought=thought,
             action=action,
