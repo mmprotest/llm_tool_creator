@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+
+import ast
+=======
+
 import inspect
 import textwrap
 from dataclasses import dataclass
@@ -37,11 +41,40 @@ class ToolManager:
         if self._config.auto_persist:
             self._ensure_generated_module()
 
+        self._load_persisted_tools()
+=======
+
+
     # ------------------------------------------------------------------
     # Registration & execution
     # ------------------------------------------------------------------
+
+    def register(
+        self,
+        func: Callable[..., Any],
+        description: str,
+        signature: str | None = None,
+        *,
+        persist: bool = False,
+    ) -> ToolSpec:
+        """Register an existing callable as a tool.
+
+        Parameters
+        ----------
+        func:
+            Callable exposed as a tool.
+        description:
+            Human-readable summary surfaced to the LLM.
+        signature:
+            Optional explicit signature string; falls back to ``inspect.signature``.
+        persist:
+            When ``True`` and :attr:`ToolingConfig.auto_persist` is enabled, the source code is
+            appended to the generated tools module for reuse in later runs.
+        """
+=======
     def register(self, func: Callable[..., Any], description: str, signature: str | None = None) -> ToolSpec:
         """Register an existing callable as a tool."""
+
 
         try:
             code = inspect.getsource(func)
@@ -55,7 +88,11 @@ class ToolManager:
             callable=func,
         )
         self._tools[spec.name] = spec
+
+        if self._config.auto_persist and persist:
+=======
         if self._config.auto_persist:
+
             self._append_to_generated_module(code)
         return spec
 
@@ -101,6 +138,15 @@ class ToolManager:
         func = self._load_function_from_code(code, expected_name)
         signature = str(inspect.signature(func))
         description = inspect.getdoc(func) or "No description provided."
+
+        return self._store_tool(
+            func=func,
+            description=description,
+            signature=signature,
+            code=code,
+            persist=self._config.auto_persist,
+        )
+=======
         spec = ToolSpec(
             name=func.__name__,
             description=description,
@@ -112,6 +158,7 @@ class ToolManager:
         if self._config.auto_persist:
             self._append_to_generated_module(code)
         return spec
+
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -127,6 +174,30 @@ class ToolManager:
         module_path.parent.mkdir(parents=True, exist_ok=True)
         with module_path.open("a", encoding="utf-8") as handle:
             handle.write("\n" + code.strip() + "\n")
+
+
+    def _store_tool(
+        self,
+        *,
+        func: Callable[..., Any],
+        description: str,
+        signature: str,
+        code: str,
+        persist: bool,
+    ) -> ToolSpec:
+        spec = ToolSpec(
+            name=func.__name__,
+            description=description,
+            signature=signature,
+            code=code,
+            callable=func,
+        )
+        self._tools[spec.name] = spec
+        if persist:
+            self._append_to_generated_module(code)
+        return spec
+
+=======
 
     def _load_function_from_code(self, code: str, expected_name: Optional[str]) -> Callable[..., Any]:
         namespace: Dict[str, Any] = {}
@@ -155,3 +226,35 @@ class ToolManager:
                 lines[index] = f"{indent}def {expected_name}{remainder}"
                 return "\n".join(lines)
         raise ValueError("Unable to find function definition in generated code.")
+
+
+    def _load_persisted_tools(self) -> None:
+        if not self._generated_module.exists():
+            return
+        source = self._generated_module.read_text(encoding="utf-8")
+        if not source.strip():
+            return
+        module = ast.parse(source)
+        lines = source.splitlines()
+        namespace: Dict[str, Any] = {}
+        exec(source, namespace)
+        for node in module.body:
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            start = node.lineno - 1
+            end = (node.end_lineno or node.lineno) - 1
+            code_snippet = "\n".join(lines[start : end + 1])
+            func = namespace.get(node.name)
+            if not callable(func):
+                continue
+            description = inspect.getdoc(func) or "No description provided."
+            signature = str(inspect.signature(func))
+            self._store_tool(
+                func=func,
+                description=description,
+                signature=signature,
+                code=code_snippet,
+                persist=False,
+            )
+=======
+
