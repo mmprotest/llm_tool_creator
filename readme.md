@@ -1,70 +1,59 @@
-# Tool Creator Agent Framework
+# Adaptive LLM Tool Creator
 
-## Overview
+This project contains a modular agent system capable of planning, creating Python tools,
+and executing them to solve complex problems. The agent combines a planner, decision
+policy, dynamic tool manager, and built-in web browsing utilities.
 
-The Tool Creator Agent Framework leverages Large Language Models (LLMs) to autonomously break down complex problem statements, generate the necessary tools (in the form of Python functions), and then apply these tools to answer queries. This framework is designed to maximize the potential of LLMs by enabling them to create and use custom tools tailored to specific tasks or problems.
+## Features
 
-## Framework Architecture
+- **Planning** – Generates multi-step plans for arbitrary goals using an OpenAI-compatible LLM.
+- **Action selection** – Chooses between thinking, executing a tool, or creating a new tool.
+- **Dynamic tool creation** – Automatically generates Python helper functions based on natural
+  language specifications and loads them at runtime.
+- **Web interaction** – Ships with DuckDuckGo search and URL fetching utilities to enable
+  online research.
+- **Python execution** – Includes a sandboxed Python executor for quick calculations or data
+  wrangling.
 
-### 1. Problem Statement Analysis
-The first step in the framework is the analysis of the problem statement. The LLM is designed to:
-- **Understand the Scope**: The agent interprets the problem statement, identifying key objectives, constraints, and required outcomes.
-- **Break Down the Problem**: The agent divides the problem into smaller, manageable sub-problems or tasks that can be solved individually.
+## Requirements
 
-### 2. Tool Creation
-Once the problem is broken down, the LLM generates the necessary tools to solve each sub-problem:
-- **Tool Identification**: The agent identifies the type of tools required (e.g., data processing functions, statistical analysis, API interaction, etc.).
-- **Function Generation**: The agent writes Python functions to serve as tools. These functions are crafted to meet the specific needs of each sub-problem.
-- **Validation**: The generated functions are tested against sample data or scenarios to ensure they function as intended.
+- Python 3.10+
+- [`openai`](https://pypi.org/project/openai/) Python SDK configured with API access.
+- Optional: [`duckduckgo-search`](https://pypi.org/project/duckduckgo-search/) for richer search results.
 
-### 3. Tool Utilization
-After creating the tools, the LLM proceeds to apply them:
-- **Tool Application**: The agent uses the created functions to solve the sub-problems.
-- **Integration**: The results from each tool are integrated to address the overall problem statement.
-- **Iterative Refinement**: If necessary, the agent refines the tools and reruns them to improve accuracy or efficiency.
+Set the following environment variables or adjust `AgentConfig.llm` to point at your preferred
+OpenAI-compatible endpoint:
 
-### 4. Query Resolution
-With the tools in place, the framework is capable of answering complex queries related to the original problem statement:
-- **Query Understanding**: The agent interprets the query within the context of the tools it has created.
-- **Tool Deployment**: The relevant tools are applied to produce the desired answers.
-- **Result Presentation**: The agent presents the results in a clear and understandable format, possibly including visualizations, summaries, or detailed explanations.
+```bash
+export OPENAI_API_KEY="your-key"
+export OPENAI_API_BASE="https://api.openai.com/v1"
+```
 
-## Example Workflow
+## Usage
 
-1. **Problem Statement**: "Analyze customer data to identify trends in purchasing behavior."
-2. **Problem Breakdown**:
-   - Extract relevant customer data.
-   - Clean and preprocess the data.
-   - Identify key trends using statistical methods.
-   - Generate visualizations to present the findings.
-3. **Tool Creation**:
-   - A Python function for data extraction.
-   - A data cleaning and preprocessing function.
-   - A statistical analysis function to identify trends.
-   - A visualization function using matplotlib or similar library.
-4. **Tool Utilization**:
-   - Apply the data extraction function.
-   - Clean the data using the preprocessing function.
-   - Analyze the data with the statistical function.
-   - Create visualizations to show purchasing trends.
-5. **Query Resolution**:
-   - Query: "What are the top 3 purchasing trends over the last year?"
-   - The agent uses the tools to extract the relevant trends and presents the results.
+Run the CLI with a goal statement:
 
-## Benefits of the Framework
+```bash
+python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
+```
 
-- **Scalability**: The framework can handle a wide range of problem types by generating custom tools as needed.
-- **Efficiency**: Automates the process of problem-solving by using tailored tools, reducing the need for manual intervention.
-- **Flexibility**: Adaptable to various domains, including data analysis, process automation, and more.
-- **Improved Accuracy**: Tools are created and refined specifically for the problem at hand, leading to more accurate results.
+To provide additional context, create a text file and pass the path via `--context`.
 
-## Future Directions
+The CLI prints the generated plan, execution log, and final answer (if produced).
 
-- **Enhanced Tool Validation**: Integrating automated testing and validation techniques to ensure the robustness of generated tools.
-- **Cross-Problem Tool Reuse**: Developing a repository of commonly used tools that can be reused or adapted for new problems.
-- **Advanced Query Handling**: Expanding the LLM’s ability to handle more complex queries by improving contextual understanding and tool integration.
+## Programmatic Example
 
-## Conclusion
+```python
+from src import AgentOrchestrator
 
-The Tool Creator Agent Framework represents a significant advancement in the application of LLMs for problem-solving. By autonomously generating and utilizing custom tools, this framework opens up new possibilities for automating complex tasks and improving the efficiency of query resolution.
+orchestrator = AgentOrchestrator()
+goal = "Summarise the latest research on quantum batteries"
+result = orchestrator.run(goal)
+print(result.last_output())
+```
 
+## Extending the Agent
+
+- Register custom Python functions via `orchestrator.tool_manager.register`.
+- Persist generated tools inside `src/agent_system/generated_tools.py` (auto-managed).
+- Modify prompts or behaviour by editing modules within `src/agent_system/`.
