@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-
 import ast
-=======
-
 import inspect
 import textwrap
 from dataclasses import dataclass
@@ -42,8 +39,6 @@ class ToolManager:
             self._ensure_generated_module()
 
         self._load_persisted_tools()
-=======
-
 
     # ------------------------------------------------------------------
     # Registration & execution
@@ -57,29 +52,12 @@ class ToolManager:
         *,
         persist: bool = False,
     ) -> ToolSpec:
-        """Register an existing callable as a tool.
-
-        Parameters
-        ----------
-        func:
-            Callable exposed as a tool.
-        description:
-            Human-readable summary surfaced to the LLM.
-        signature:
-            Optional explicit signature string; falls back to ``inspect.signature``.
-        persist:
-            When ``True`` and :attr:`ToolingConfig.auto_persist` is enabled, the source code is
-            appended to the generated tools module for reuse in later runs.
-        """
-=======
-    def register(self, func: Callable[..., Any], description: str, signature: str | None = None) -> ToolSpec:
         """Register an existing callable as a tool."""
-
 
         try:
             code = inspect.getsource(func)
         except (OSError, TypeError):
-            code = f"# Source unavailable for {func.__name__}\n"
+            code = f"# Source unavailable for {func.__name__}\\n"
         spec = ToolSpec(
             name=func.__name__,
             description=description,
@@ -90,9 +68,6 @@ class ToolManager:
         self._tools[spec.name] = spec
 
         if self._config.auto_persist and persist:
-=======
-        if self._config.auto_persist:
-
             self._append_to_generated_module(code)
         return spec
 
@@ -120,7 +95,13 @@ class ToolManager:
     # ------------------------------------------------------------------
     # Dynamic creation
     # ------------------------------------------------------------------
-    def create_tool(self, llm: LLMClient, specification: str, expected_name: Optional[str] = None) -> ToolSpec:
+
+    def create_tool(
+        self,
+        llm: LLMClient,
+        specification: str,
+        expected_name: Optional[str] = None,
+    ) -> ToolSpec:
         """Generate and register a tool based on an LLM specification."""
 
         system_prompt = (
@@ -129,7 +110,7 @@ class ToolManager:
         )
         user_prompt = (
             "Create a Python function that satisfies the specification below. "
-            "Use a descriptive docstring that explains inputs and return values.\n\n"
+            "Use a descriptive docstring that explains inputs and return values.\\n\\n"
             f"{specification.strip()}"
         )
         code = llm.simple_completion(system_prompt, user_prompt)
@@ -146,23 +127,11 @@ class ToolManager:
             code=code,
             persist=self._config.auto_persist,
         )
-=======
-        spec = ToolSpec(
-            name=func.__name__,
-            description=description,
-            signature=signature,
-            code=code,
-            callable=func,
-        )
-        self._tools[spec.name] = spec
-        if self._config.auto_persist:
-            self._append_to_generated_module(code)
-        return spec
-
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
     def _ensure_generated_module(self) -> None:
         module_path = self._generated_module
         if not module_path.exists():
@@ -173,8 +142,7 @@ class ToolManager:
         module_path = self._generated_module
         module_path.parent.mkdir(parents=True, exist_ok=True)
         with module_path.open("a", encoding="utf-8") as handle:
-            handle.write("\n" + code.strip() + "\n")
-
+            handle.write("\\n" + code.strip() + "\\n")
 
     def _store_tool(
         self,
@@ -197,15 +165,17 @@ class ToolManager:
             self._append_to_generated_module(code)
         return spec
 
-=======
-
-    def _load_function_from_code(self, code: str, expected_name: Optional[str]) -> Callable[..., Any]:
+    def _load_function_from_code(
+        self, code: str, expected_name: Optional[str]
+    ) -> Callable[..., Any]:
         namespace: Dict[str, Any] = {}
         exec(textwrap.dedent(code), namespace)
         functions = {name: obj for name, obj in namespace.items() if callable(obj)}
         if expected_name:
             if expected_name not in functions:
-                raise ValueError(f"Generated code does not define the expected function '{expected_name}'.")
+                raise ValueError(
+                    f"Generated code does not define the expected function '{expected_name}'."
+                )
             return functions[expected_name]
         if not functions:
             raise ValueError("No callable objects were generated.")
@@ -224,9 +194,8 @@ class ToolManager:
                     raise ValueError("Malformed function definition from LLM.")
                 remainder = rest[rest.index("(") :]
                 lines[index] = f"{indent}def {expected_name}{remainder}"
-                return "\n".join(lines)
+                return "\\n".join(lines)
         raise ValueError("Unable to find function definition in generated code.")
-
 
     def _load_persisted_tools(self) -> None:
         if not self._generated_module.exists():
@@ -243,7 +212,7 @@ class ToolManager:
                 continue
             start = node.lineno - 1
             end = (node.end_lineno or node.lineno) - 1
-            code_snippet = "\n".join(lines[start : end + 1])
+            code_snippet = "\\n".join(lines[start : end + 1])
             func = namespace.get(node.name)
             if not callable(func):
                 continue
@@ -256,5 +225,3 @@ class ToolManager:
                 code=code_snippet,
                 persist=False,
             )
-=======
-

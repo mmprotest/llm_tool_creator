@@ -69,9 +69,6 @@ The agent can only execute actions through registered tools.
 
         self._llm = llm
         self._require_reasoning = require_reasoning
-=======
-    def __init__(self, llm: LLMClient) -> None:
-        self._llm = llm
 
 
     def decide(self, step: str, tools: List[ToolSpec], context: str | None = None) -> ActionDecision:
@@ -99,7 +96,6 @@ The agent can only execute actions through registered tools.
             user_prompt["instructions"] += (
                 " Always explain why you selected the action in the 'thought' field before acting."
             )
-=======
 
         response = self._llm.chat(
             [
@@ -140,7 +136,6 @@ The agent can only execute actions through registered tools.
 
         if self._require_reasoning and not thought:
             raise DecisionError("Reasoning is required but the thought field was empty.")
-=======
 
         return ActionDecision(
             thought=thought,

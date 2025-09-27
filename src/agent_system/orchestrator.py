@@ -53,8 +53,6 @@ class AgentOrchestrator:
         self._decider = ActionDecider(
             self._llm, require_reasoning=self._config.planning.require_reasoning
         )
-=======
-        self._decider = ActionDecider(self._llm)
 
 
     @property
