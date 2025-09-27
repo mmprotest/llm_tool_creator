@@ -50,3 +50,4 @@ class AgentConfig:
     planning: PlanningConfig = field(default_factory=PlanningConfig)
     tooling: ToolingConfig = field(default_factory=ToolingConfig)
     verbose: bool = True
+    max_decision_attempts: int = 2

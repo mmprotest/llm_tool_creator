@@ -94,6 +94,8 @@ Runtime settings live in `AgentConfig` (`src/agent_system/config.py`). Override 
 - **LLMConfig** – Model name, API key/base URL, timeout, and additional OpenAI parameters.
 - **PlanningConfig** – Maximum plan steps and whether the decider must always provide reasoning (`require_reasoning`).
 - **ToolingConfig** – Generated tools path and `auto_persist` flag controlling persistence.
+- **AgentConfig.max_decision_attempts** – Number of times the orchestrator will retry the
+  action-selection step when the model returns an invalid decision.
 
 ## Tool persistence & custom tools
 
