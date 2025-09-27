@@ -1,70 +1,147 @@
-# Tool Creator Agent Framework
+# Adaptive LLM Tool Creator
 
-## Overview
+This repository ships a production-ready framework for building autonomous, tool-augmented
+agents. The agent can decompose arbitrary goals into actionable plans, decide which tools to
+execute, generate new Python tools on demand, and browse the web to gather supporting
+information.
 
-The Tool Creator Agent Framework leverages Large Language Models (LLMs) to autonomously break down complex problem statements, generate the necessary tools (in the form of Python functions), and then apply these tools to answer queries. This framework is designed to maximize the potential of LLMs by enabling them to create and use custom tools tailored to specific tasks or problems.
+## Key capabilities
 
-## Framework Architecture
+- **OpenAI native** – Built on top of the official [`openai`](https://pypi.org/project/openai/) SDK
+  and compatible with any OpenAI-style endpoint (Azure OpenAI, local proxies, etc.).
+- **Reasoned planning** – A planner derives a concise sequence of steps before execution to keep
+  the agent focused and auditable.
+- **Action policy** – The decision module weighs existing tools against the need to think or create
+  a new tool, and is configured to always expose its reasoning.
+- **Dynamic tool creation** – Natural-language specifications are translated into executable Python
+  helpers which can be cached and re-used across runs.
+- **Web research tooling** – DuckDuckGo search and HTTP fetching provide light-weight browsing
+  primitives out of the box.
+- **Interactive & scripted workflows** – Use the Streamlit control panel for rapid experimentation
+  or the CLI/programmatic API for automation.
 
-### 1. Problem Statement Analysis
-The first step in the framework is the analysis of the problem statement. The LLM is designed to:
-- **Understand the Scope**: The agent interprets the problem statement, identifying key objectives, constraints, and required outcomes.
-- **Break Down the Problem**: The agent divides the problem into smaller, manageable sub-problems or tasks that can be solved individually.
+## Project structure
 
-### 2. Tool Creation
-Once the problem is broken down, the LLM generates the necessary tools to solve each sub-problem:
-- **Tool Identification**: The agent identifies the type of tools required (e.g., data processing functions, statistical analysis, API interaction, etc.).
-- **Function Generation**: The agent writes Python functions to serve as tools. These functions are crafted to meet the specific needs of each sub-problem.
-- **Validation**: The generated functions are tested against sample data or scenarios to ensure they function as intended.
+```
+src/
+  agent_system/
+    config.py        # Dataclasses describing the agent configuration model.
+    llm.py           # Thin wrapper around the OpenAI Python client.
+    planner.py       # Converts goals into step-by-step plans.
+    decider.py       # Chooses whether to think, execute, or create tools with explicit reasoning.
+    tooling.py       # Registers built-in tools and manages dynamically generated ones.
+    tools/           # Default tools (web search, URL fetcher, Python executor).
+    orchestrator.py  # High-level loop coordinating the planner, decider, and tool manager.
+    generated_tools.py # Auto-populated with LLM-generated helpers (loaded on start-up).
+main.py              # CLI entry point.
+streamlit_app.py     # Streamlit UI for interactive experimentation.
+```
 
-### 3. Tool Utilization
-After creating the tools, the LLM proceeds to apply them:
-- **Tool Application**: The agent uses the created functions to solve the sub-problems.
-- **Integration**: The results from each tool are integrated to address the overall problem statement.
-- **Iterative Refinement**: If necessary, the agent refines the tools and reruns them to improve accuracy or efficiency.
+## Installation
 
-### 4. Query Resolution
-With the tools in place, the framework is capable of answering complex queries related to the original problem statement:
-- **Query Understanding**: The agent interprets the query within the context of the tools it has created.
-- **Tool Deployment**: The relevant tools are applied to produce the desired answers.
-- **Result Presentation**: The agent presents the results in a clear and understandable format, possibly including visualizations, summaries, or detailed explanations.
+1. **Create a virtual environment** (optional but recommended).
 
-## Example Workflow
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
 
-1. **Problem Statement**: "Analyze customer data to identify trends in purchasing behavior."
-2. **Problem Breakdown**:
-   - Extract relevant customer data.
-   - Clean and preprocess the data.
-   - Identify key trends using statistical methods.
-   - Generate visualizations to present the findings.
-3. **Tool Creation**:
-   - A Python function for data extraction.
-   - A data cleaning and preprocessing function.
-   - A statistical analysis function to identify trends.
-   - A visualization function using matplotlib or similar library.
-4. **Tool Utilization**:
-   - Apply the data extraction function.
-   - Clean the data using the preprocessing function.
-   - Analyze the data with the statistical function.
-   - Create visualizations to show purchasing trends.
-5. **Query Resolution**:
-   - Query: "What are the top 3 purchasing trends over the last year?"
-   - The agent uses the tools to extract the relevant trends and presents the results.
+2. **Install dependencies**.
 
-## Benefits of the Framework
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- **Scalability**: The framework can handle a wide range of problem types by generating custom tools as needed.
-- **Efficiency**: Automates the process of problem-solving by using tailored tools, reducing the need for manual intervention.
-- **Flexibility**: Adaptable to various domains, including data analysis, process automation, and more.
-- **Improved Accuracy**: Tools are created and refined specifically for the problem at hand, leading to more accurate results.
+3. **Provide LLM credentials**. The agent reads `OPENAI_API_KEY` and `OPENAI_API_BASE` (or the
+   `LLM_API_KEY` / `LLM_API_BASE` fallbacks). For example:
 
-## Future Directions
+   ```bash
+   export OPENAI_API_KEY="your-key"
+   export OPENAI_API_BASE="https://api.openai.com/v1"  # optional override
+   ```
 
-- **Enhanced Tool Validation**: Integrating automated testing and validation techniques to ensure the robustness of generated tools.
-- **Cross-Problem Tool Reuse**: Developing a repository of commonly used tools that can be reused or adapted for new problems.
-- **Advanced Query Handling**: Expanding the LLM’s ability to handle more complex queries by improving contextual understanding and tool integration.
+## Usage
 
-## Conclusion
+### Streamlit control panel
 
-The Tool Creator Agent Framework represents a significant advancement in the application of LLMs for problem-solving. By autonomously generating and utilizing custom tools, this framework opens up new possibilities for automating complex tasks and improving the efficiency of query resolution.
+Launch the interactive UI to configure models, run goals, and inspect step-by-step execution.
 
+```bash
+streamlit run streamlit_app.py
+```
+
+The sidebar exposes model credentials, planning depth, persistence controls, and advanced OpenAI
+parameters. The main area visualises the generated plan, each reasoning step, any dynamically
+created tools (including their source code), and the final answer.
+
+### Command line interface
+
+Execute the agent from the terminal:
+
+```bash
+python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
+```
+
+Optional additional context can be supplied via a text file:
+
+```bash
+python main.py "Draft a marketing plan" --context notes/brand_constraints.txt
+```
+
+The CLI prints the plan, execution log, tool creations, and any final output.
+
+### Programmatic access
+
+```python
+from src import AgentOrchestrator
+
+orchestrator = AgentOrchestrator()
+result = orchestrator.run("Summarise the latest research on quantum batteries")
+print(result.last_output())
+```
+
+## Configuration reference
+
+All runtime settings are encapsulated by `AgentConfig` (`src/agent_system/config.py`). Override the
+defaults either programmatically or within the Streamlit sidebar:
+
+- **LLMConfig** – Model name, API key/base URL, timeout, and extra parameters forwarded to
+  `openai.ChatCompletion`. Use this to adjust temperature, response format, etc.
+- **PlanningConfig** – Maximum number of plan steps and whether the decider must always supply
+  reasoning (`require_reasoning=True` raises an error if the thought field is blank).
+- **ToolingConfig** – Path to the generated tools module and an `auto_persist` flag controlling
+  whether new tools are appended for later reuse.
+
+## Tool persistence & custom tools
+
+- Built-in helpers (`web_search`, `fetch_url`, `run_python`) are registered at startup without being
+  written to disk.
+- Dynamically generated tools are appended to `src/agent_system/generated_tools.py` when persistence
+  is enabled. The file is parsed on initialisation so previously created helpers become immediately
+  available in subsequent runs.
+- You can register your own utilities by calling `orchestrator.tool_manager.register` with
+  `persist=True` if you want them stored alongside generated tools.
+
+## Testing & quality checks
+
+The project is validated using Python's bytecode compiler to ensure all modules import cleanly:
+
+```bash
+python -m compileall src streamlit_app.py main.py example_mortgage_agent.py
+```
+
+You can also run the agent in a dry run (with mock LLM responses) or add your own tests depending on
+your deployment requirements.
+
+## Troubleshooting
+
+- **Empty or failing decisions** – Enable persistence and inspect the execution log to confirm the
+  LLM returned a valid JSON payload. The decider enforces non-empty reasoning when
+  `require_reasoning=True`.
+- **DuckDuckGo limits** – Install `duckduckgo-search` for API-based queries; otherwise the HTML and
+  instant-answer fallbacks will be used automatically.
+- **OpenAI SDK missing** – Install the [`openai`](https://pypi.org/project/openai/) package and
+  provide valid credentials before running the CLI or Streamlit app. The orchestrator surfaces a
+  descriptive error if the dependency is unavailable.
+- **Network or SSL errors** – Verify proxy/firewall rules and confirm the `OPENAI_API_BASE`
+  endpoint is reachable from your environment.
