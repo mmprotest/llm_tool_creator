@@ -66,16 +66,30 @@ class AgentOrchestrator:
 
         plan = self._planner.create_plan(goal, context=context)
         result = AgentRunResult(plan=plan)
+        max_attempts = max(1, self._config.max_decision_attempts)
         for step in plan.steps:
             tools = self._tool_manager.available_tools()
-            try:
-                decision = self._decider.decide(step, tools, context=context)
-            except DecisionError as exc:
+            decision: ActionDecision | None = None
+            last_error: str | None = None
+            decision_context = context
+            for attempt in range(max_attempts):
+                try:
+                    decision = self._decider.decide(step, tools, context=decision_context)
+                    break
+                except DecisionError as exc:
+                    last_error = str(exc)
+                    if attempt + 1 < max_attempts:
+                        base_context = (context or "").strip()
+                        retry_hint = f"Previous decision error: {last_error}"
+                        decision_context = (
+                            f"{base_context}\n{retry_hint}" if base_context else retry_hint
+                        )
+            if decision is None:
                 result.steps.append(
                     StepLog(
                         step_description=step,
                         decision=ActionDecision("", "think", None, {}, None),
-                        error=str(exc),
+                        error=last_error,
                     )
                 )
                 continue
