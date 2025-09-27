@@ -19,17 +19,13 @@ policy, dynamic tool manager, and built-in web browsing utilities.
 
 - Python 3.10+
 - [`openai`](https://pypi.org/project/openai/) Python SDK configured with API access.
-- Optional: [`duckduckgo-search`](https://pypi.org/project/duckduckgo-search/) for richer search results.
 
-Set the following environment variables or adjust `AgentConfig.llm` to point at your preferred
-OpenAI-compatible endpoint:
-
-```bash
 export OPENAI_API_KEY="your-key"
 export OPENAI_API_BASE="https://api.openai.com/v1"
 ```
 
 ## Usage
+
 
 Run the CLI with a goal statement:
 
@@ -37,9 +33,7 @@ Run the CLI with a goal statement:
 python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
 ```
 
-To provide additional context, create a text file and pass the path via `--context`.
 
-The CLI prints the generated plan, execution log, and final answer (if produced).
 
 ## Programmatic Example
 
