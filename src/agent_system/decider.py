@@ -54,6 +54,42 @@ JSON schema:
 The agent can only execute actions through registered tools.
 """
 
+    _RESPONSE_FORMAT = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "action_decision",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "thought": {"type": "string"},
+                    "action": {
+                        "type": "string",
+                        "enum": ["use_tool", "think", "create_tool"],
+                    },
+                    "tool_name": {"type": ["string", "null"]},
+                    "arguments": {"type": "object"},
+                    "new_tool": {
+                        "anyOf": [
+                            {"type": "null"},
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "purpose": {"type": "string"},
+                                    "specification": {"type": "string"},
+                                },
+                                "required": ["name", "purpose", "specification"],
+                                "additionalProperties": False,
+                            },
+                        ]
+                    },
+                },
+                "required": ["thought", "action", "arguments"],
+                "additionalProperties": False,
+            },
+        },
+    }
+
 
     def __init__(self, llm: LLMClient, *, require_reasoning: bool = True) -> None:
         """Create a decider.
@@ -102,7 +138,7 @@ The agent can only execute actions through registered tools.
                 Message(role="system", content=self._SYSTEM_PROMPT),
                 Message(role="user", content=json.dumps(user_prompt, ensure_ascii=False)),
             ],
-            response_format={"type": "json_object"},
+            response_format=self._RESPONSE_FORMAT,
         )
         try:
             payload = json.loads(response)
