@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import List
 
@@ -62,11 +63,11 @@ Return between 1 and {max_steps} steps.
         lines = [line.strip() for line in raw_response.splitlines() if line.strip()]
         steps: List[str] = []
         for line in lines:
-            if ":" in line:
-                _, action = line.split(":", 1)
+            # Normalise numbered or bulleted prefixes such as "1.", "1)" or "-".
+            action = re.sub(r"^(?:\d+[\.:\)]\s*|[-*]\s*)", "", line).strip()
+            if ":" in action:
+                _, action = action.split(":", 1)
                 action = action.strip()
-            else:
-                action = line
             if action:
                 steps.append(action)
             if len(steps) >= self._config.max_plan_steps:
