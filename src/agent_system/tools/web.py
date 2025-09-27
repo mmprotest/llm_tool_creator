@@ -10,6 +10,13 @@ from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 import requests
 
+_DDG_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+    )
+}
+
 try:  # pragma: no cover - optional dependency
     from duckduckgo_search import DDGS  # type: ignore
 except Exception:  # pragma: no cover - fallback when package missing
@@ -60,14 +67,16 @@ def fetch_url(url: str, timeout: int = 15) -> str:
 
     if not url:
         raise ValueError("URL must be provided.")
-    response = requests.get(url, timeout=timeout)
+    response = requests.get(url, timeout=timeout, headers=_DDG_HEADERS)
     response.raise_for_status()
     return response.text
 
 
 def _duckduckgo_html_fallback(query: str, max_results: int) -> Iterable[SearchResult]:
     params = {"q": query, "kl": "us-en"}
-    response = requests.get("https://duckduckgo.com/html", params=params, timeout=15)
+    response = requests.get(
+        "https://duckduckgo.com/html", params=params, timeout=15, headers=_DDG_HEADERS
+    )
     response.raise_for_status()
     html_text = response.text
     pattern = re.compile(
@@ -107,7 +116,9 @@ def _duckduckgo_html_fallback(query: str, max_results: int) -> Iterable[SearchRe
 
 def _duckduckgo_instant_answer_fallback(query: str, max_results: int) -> Iterable[SearchResult]:
     params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
-    response = requests.get("https://api.duckduckgo.com/", params=params, timeout=15)
+    response = requests.get(
+        "https://api.duckduckgo.com/", params=params, timeout=15, headers=_DDG_HEADERS
+    )
     response.raise_for_status()
     data = response.json()
     results: List[SearchResult] = []

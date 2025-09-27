@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, MutableMapping, Sequence
+from typing import Any, Dict, Iterable, Mapping, MutableMapping, Sequence
 
 from openai import OpenAI
 
@@ -47,18 +47,46 @@ class LLMClient:
     ) -> str:
         """Execute a chat completion request and return the response text."""
 
-        payload = [{"role": msg.role, "content": msg.content} for msg in messages]
+        payload = [
+            {
+                "role": msg.role,
+                "content": [{"type": "text", "text": msg.content}],
+            }
+            for msg in messages
+        ]
         request_args: MutableMapping[str, Any] = {
             "model": self._config.model,
-            "messages": payload,
+            "input": payload,
             "timeout": self._config.request_timeout,
             **self._config.extra,
         }
         if response_format is not None:
             request_args["response_format"] = dict(response_format)
-        response = self._client.chat.completions.create(**request_args)
-        choice = response.choices[0]
-        return (choice.message.content or "").strip()
+        response = self._client.responses.create(**request_args)
+        output_text = getattr(response, "output_text", None)
+        if output_text:
+            return output_text.strip()
+        text_chunks = list(self._extract_text_chunks(response))
+        if text_chunks:
+            return "".join(text_chunks).strip()
+        return ""
+
+    def _extract_text_chunks(self, response: Any) -> Iterable[str]:
+        """Yield text segments from a Harmony response object."""
+
+        output = getattr(response, "output", None)
+        if not output:
+            return
+        for item in output:
+            contents = getattr(item, "content", None)
+            if not contents:
+                continue
+            for content in contents:
+                content_type = getattr(content, "type", None)
+                if content_type in {"output_text", "text"}:
+                    text = getattr(content, "text", None)
+                    if text:
+                        yield text
 
     def simple_completion(self, system_prompt: str, user_prompt: str) -> str:
         """Small helper when only a system and user prompt are required."""
