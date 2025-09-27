@@ -132,6 +132,36 @@ The agent can only execute actions through registered tools.
                             },
                         },
                         "required": ["thought", "action", "arguments"],
+                        "allOf": [
+                            {
+                                "if": {"properties": {"action": {"const": "use_tool"}}},
+                                "then": {
+                                    "properties": {"tool_name": {"type": "string"}},
+                                    "required": ["tool_name"],
+                                },
+                            },
+                            {
+                                "if": {"properties": {"action": {"const": "create_tool"}}},
+                                "then": {
+                                    "properties": {
+                                        "new_tool": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {"type": "string"},
+                                                "purpose": {"type": "string"},
+                                                "specification": {"type": "string"},
+                                            },
+                                            "required": [
+                                                "name",
+                                                "purpose",
+                                                "specification",
+                                            ],
+                                        }
+                                    },
+                                    "required": ["new_tool"],
+                                },
+                            },
+                        ],
                     },
                 },
             },
