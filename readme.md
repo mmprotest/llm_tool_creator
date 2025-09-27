@@ -19,33 +19,13 @@ policy, dynamic tool manager, and built-in web browsing utilities.
 
 - Python 3.10+
 - [`openai`](https://pypi.org/project/openai/) Python SDK configured with API access.
-- [`streamlit`](https://streamlit.io/) for the interactive control panel.
-- Optional: [`duckduckgo-search`](https://pypi.org/project/duckduckgo-search/) for richer search results.
 
-Install the dependencies and export your API credentials (or adjust `AgentConfig.llm` to match
-your OpenAI-compatible endpoint):
-
-```bash
-pip install openai streamlit duckduckgo-search
 export OPENAI_API_KEY="your-key"
 export OPENAI_API_BASE="https://api.openai.com/v1"
 ```
 
 ## Usage
 
-### Streamlit control panel
-
-Launch the interactive UI to configure the agent, run goals, and inspect execution logs:
-
-```bash
-streamlit run streamlit_app.py
-```
-
-Use the sidebar to choose the model, provide API keys, adjust planning parameters, and toggle
-automatic tool persistence. The main panel shows the generated plan, execution steps, tools
-created on-the-fly, and the final output.
-
-### Command line interface
 
 Run the CLI with a goal statement:
 
@@ -53,8 +33,7 @@ Run the CLI with a goal statement:
 python main.py "Plan a weekend trip to Tokyo including a day trip and budget"
 ```
 
-To provide additional context, create a text file and pass the path via `--context`. The CLI
-prints the generated plan, execution log, and final answer (if produced).
+
 
 ## Programmatic Example
 
