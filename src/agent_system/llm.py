@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Mapping, MutableMapping, Sequence
 
 from openai import OpenAI
 
@@ -39,16 +39,24 @@ class LLMClient:
 
         return self._config.model
 
-    def chat(self, messages: Sequence[Message]) -> str:
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_format: Mapping[str, object] | None = None,
+    ) -> str:
         """Execute a chat completion request and return the response text."""
 
         payload = [{"role": msg.role, "content": msg.content} for msg in messages]
-        response = self._client.chat.completions.create(
-            model=self._config.model,
-            messages=payload,
-            timeout=self._config.request_timeout,
+        request_args: MutableMapping[str, Any] = {
+            "model": self._config.model,
+            "messages": payload,
+            "timeout": self._config.request_timeout,
             **self._config.extra,
-        )
+        }
+        if response_format is not None:
+            request_args["response_format"] = dict(response_format)
+        response = self._client.chat.completions.create(**request_args)
         choice = response.choices[0]
         return (choice.message.content or "").strip()
 
